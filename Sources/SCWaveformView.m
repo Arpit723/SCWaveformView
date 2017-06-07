@@ -11,17 +11,7 @@
 
 #define noiseFloor (-50.0)
 
-#if !defined __IPHONE_10_0 || __IPHONE_OS_VERSION_MAX_ALLOWED < __IPHONE_10_0
-@protocol SCLayerDelegate
-@end
-#else
-@protocol SCLayerDelegate<CALayerDelegate>
-@end
-#endif
-
-@interface SCWaveformLayerDelegate : NSObject<SCLayerDelegate>
-
-@end
+@interface SCWaveformLayer : CALayer
 
 @property (assign, nonatomic) CMTime waveformTime;
 
@@ -80,7 +70,7 @@
 - (void)commonInit {
     _precision = 1;
     _lineWidthRatio = 1;
-
+    
     _waveformLayersDelegate = [SCWaveformLayerDelegate new];
     _timeRange = CMTimeRangeMake(kCMTimeZero, kCMTimePositiveInfinity);
     _progressTime = kCMTimeZero;
@@ -103,7 +93,7 @@
 
 - (NSUInteger)_prepareLayers:(CGFloat)pixelRatio {
     NSUInteger numberOfLayers = (NSUInteger)ceil(pixelRatio * self.bounds.size.width) + 1;
-    int numbersOfChannels = (int)_cache.actualNumberOfChannels;
+    int numbersOfChannels = _cache.actualNumberOfChannels;
     
     while (numbersOfChannels != _waveforms.count) {
         if (numbersOfChannels < _waveforms.count) {
@@ -139,7 +129,7 @@
         }
         
     }
-
+    
     return numberOfLayers;
 }
 
@@ -163,7 +153,7 @@
         }
         
         
-        CMTime timePerPixel = CMTimeMultiplyByFloat64(_timeRange.duration, 1 / size.width);
+        CMTime timePerPixel = CMTimeMultiplyByRatio(_timeRange.duration, 1, size.width);
         double startRatio = CMTimeGetSeconds(_timeRange.start) / CMTimeGetSeconds(timePerPixel);
         int newFirstVisibleIdx = floor(startRatio);
         waveformSuperlayerFrame.origin.x = -startRatio / pixelRatio;
@@ -206,7 +196,7 @@
         
         CGColorRef normalColor = _normalColor.CGColor;
         CGColorRef progressColor = _progressColor.CGColor;
-        int numberOfChannels = (int)_waveforms.count;
+        int numberOfChannels = _waveforms.count;
         CGFloat heightPerChannel = (size.height - _channelsPadding * (numberOfChannels - 1)) / numberOfChannels;
         CGFloat halfHeightPerChannel = heightPerChannel / 2;
         CGFloat bandWidth = 1 / pixelRatio;
@@ -245,11 +235,11 @@
                 
                 layer.frame = CGRectMake((newFirstVisibleIdx + idx) * bandWidth, y,
                                          _lineWidthRatio / pixelRatio, pixelHeight * 2);
-                                
+                
                 layer.waveformTime = time;
             }
         }];
-
+        
         _graphDirty = NO;
         
         [CATransaction commit];
@@ -263,7 +253,7 @@
 - (UIImage *)generateWaveformImageWithSize:(CGSize)size {
     UIGraphicsBeginImageContextWithOptions(CGSizeMake(size.width, size.height), NO, 1);
     
-//    [self renderWaveformInContext:UIGraphicsGetCurrentContext() size:size];
+    //    [self renderWaveformInContext:UIGraphicsGetCurrentContext() size:size];
     
     UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
     
@@ -312,14 +302,14 @@
                 CGRect bounds = layer.bounds;
                 bounds.size.width = _lineWidthRatio / pixelRatio;
                 layer.bounds = bounds;
-            }            
+            }
         }
     }
 }
 
 - (void)setNormalColor:(UIColor *)normalColor {
     _normalColor = normalColor;
-
+    
     [self _updateLayersColor:YES lineWidth:NO];
 }
 
@@ -362,7 +352,7 @@
     }
     
     _timeRange = timeRange;
-
+    
     [self setNeedsLayout];
     
     [self didChangeValueForKey:@"timeRange"];
@@ -385,7 +375,7 @@
 - (CGSize)waveformSize {
     CMTimeRange timeRange = _timeRange;
     CMTime assetDuration = [_cache actualAssetDuration];
-
+    
     if (CMTIME_IS_INVALID(assetDuration) || CMTIME_IS_INVALID(timeRange.duration) || CMTIME_IS_POSITIVE_INFINITY(timeRange.duration)) {
         return CGSizeZero;
     } else {
@@ -425,7 +415,7 @@
         _channelsPadding = channelsPadding;
         
         [self _makeDirty];
-
+        
     }
 }
 
