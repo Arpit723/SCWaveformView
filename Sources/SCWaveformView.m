@@ -213,6 +213,8 @@
         CGFloat pointSize = 1.0 / scale / 2;
         CMTime assetDuration = [_cache actualAssetDuration];
         
+        __weak SCWaveformView *selfWeak = self;
+        
         [_cache readRange:dirtyRange atTime:_timeRange.start handler:^(int channel, int idx, float sample, CMTime time) {
             if (idx < numberOfLayersPerChannel && channel < numberOfChannels) {
                 float pixelHeight = halfHeightPerChannel * (1 - sample / noiseFloor);
@@ -239,7 +241,9 @@
                     layer.backgroundColor = destColor;
                 }
                 
-                layer.frame = CGRectMake((newFirstVisibleIdx + idx) * bandWidth, _channelsPadding * channel + heightPerChannel * channel + halfHeightPerChannel - pixelHeight,
+                CGFloat y = selfWeak.mergeChannels ?  _channelsPadding + heightPerChannel + halfHeightPerChannel - pixelHeight : _channelsPadding * channel + heightPerChannel * channel + halfHeightPerChannel - pixelHeight;
+                
+                layer.frame = CGRectMake((newFirstVisibleIdx + idx) * bandWidth, y,
                                          _lineWidthRatio / pixelRatio, pixelHeight * 2);
                                 
                 layer.waveformTime = time;

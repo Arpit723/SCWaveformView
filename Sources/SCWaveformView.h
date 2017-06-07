@@ -67,6 +67,8 @@
  */
 @property (assign, nonatomic) CMTimeRange timeRange;
 
+@property (assign, nonatomic) BOOL mergeChannels;
+
 /**
  The first audio channel index to render.
  Default is 0
